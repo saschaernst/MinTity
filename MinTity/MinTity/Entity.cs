@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using MinMVC;
 
 namespace MinTity
 {
@@ -36,18 +37,12 @@ namespace MinTity
 
 		void ManageEntity(Entity entity)
 		{
-			foreach (var runner in runners)
-			{
-				runner.ManageEntity(entity);
-			}
+			runners.Each(runner => runner.ManageEntity(entity));
 		}
 
 		public void Run()
 		{
-			foreach (var runner in runners)
-			{
-				runner.Run();
-			}
+			runners.Each(runner => runner.Run());
 		}
 	}
 
@@ -103,29 +98,20 @@ namespace MinTity
 			var type = typeof(T);
 			var queue = cache[type];
 			var ability = queue.Count > 0 ? queue.Dequeue() as T : new T();
-			var id = nextId;
-
-			if (!abilityMap.TryGetValue(type, out id))
-			{
-				abilityMap[type] = nextId;
-				nextId++;
-			}
-
-			ability.id = id;
+			ability.id = abilityMap.Retrieve(type, IncNextId);
 
 			return ability;
+		}
+
+		int IncNextId()
+		{
+			return nextId++;
 		}
 
 		public void Remove<T>(T ability) where T : Ability
 		{
 			var type = typeof(T);
-			Queue<Ability> queue;
-
-			if (!cache.TryGetValue(type, out queue))
-			{
-				cache[type] = queue = new Queue<Ability>();
-			}
-
+			var queue = cache.Retrieve(type);
 			queue.Enqueue(ability);
 		}
 	}
@@ -182,10 +168,7 @@ namespace MinTity
 
 		public void Run()
 		{
-			foreach (var entity in entities)
-			{
-				Handle(entity);
-			}
+			entities.Each(Handle);
 		}
 
 		protected abstract void Handle(Entity entity);
