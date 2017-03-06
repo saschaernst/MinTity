@@ -7,35 +7,45 @@ namespace MinTity
 	{
 		HashSet<Runner> runners = new HashSet<Runner>();
 		Dictionary<int, Entity> entities = new Dictionary<int, Entity>();
-		Queue<Entity> cache = new Queue<Entity>();
+		LinkedList<Entity> cache = new LinkedList<Entity>();
 		int nextId = 0;
 
-		public Entity Create ()
+		public Entity Create()
 		{
-			var entity = cache.Count > 0 ? cache.Dequeue() : new Entity();
+			var entity = cache.Count > 0 ? GetFirst() : new Entity();
 			entity.id = nextId++;
 			entity.ManageEntity = ManageEntity;
 
 			return entity;
 		}
 
-		public void Remove (Entity entity)
+		Entity GetFirst()
+		{
+			var entity = cache.First.Value;
+			cache.RemoveFirst();
+
+			return entity;
+		}
+
+		public void Remove(Entity entity)
 		{
 			entity.RemoveAll();
 			entities.Remove(entity.id);
-			cache.Enqueue(entity);
+			cache.AddLast(entity);
 		}
 
-		void ManageEntity (Entity entity)
+		void ManageEntity(Entity entity)
 		{
-			foreach (var runner in runners) {
+			foreach (var runner in runners)
+			{
 				runner.ManageEntity(entity);
 			}
 		}
 
-		public void Run ()
+		public void Run()
 		{
-			foreach (var runner in runners) {
+			foreach (var runner in runners)
+			{
 				runner.Run();
 			}
 		}
@@ -49,31 +59,32 @@ namespace MinTity
 
 		public int id { get; set; }
 
-		public void Add (int id, Ability ability)
+		public void Add(int id, Ability ability)
 		{
 			abilities[id] = ability;
 			ManageEntity(this);
 		}
 
-		public bool Has (int id)
+		public bool Has(int id)
 		{
 			return abilities[id] != null;
 		}
 
-		public T Get<T> (int id) where T : Ability
+		public T Get<T>(int id) where T : Ability
 		{
 			return abilities[id] as T;
 		}
 
-		public void Remove (int id)
+		public void Remove(int id)
 		{
-			if (Has(id)) {
+			if (Has(id))
+			{
 				abilities.RemoveAt(id);
 				ManageEntity(this);
 			}
 		}
 
-		public void RemoveAll ()
+		public void RemoveAll()
 		{
 			abilities.Clear();
 			ManageEntity(this);
@@ -87,14 +98,15 @@ namespace MinTity
 		Dictionary<Type, int> abilityMap = new Dictionary<Type, int>();
 		Dictionary<Type, Queue<Ability>> cache = new Dictionary<Type, Queue<Ability>>();
 
-		public T Create<T> () where T : Ability, new()
+		public T Create<T>() where T : Ability, new()
 		{
 			var type = typeof(T);
 			var queue = cache[type];
 			var ability = queue.Count > 0 ? queue.Dequeue() as T : new T();
 			var id = nextId;
 
-			if (!abilityMap.TryGetValue(type, out id)) {
+			if (!abilityMap.TryGetValue(type, out id))
+			{
 				abilityMap[type] = nextId;
 				nextId++;
 			}
@@ -104,12 +116,13 @@ namespace MinTity
 			return ability;
 		}
 
-		public void Remove<T> (T ability) where T : Ability
+		public void Remove<T>(T ability) where T : Ability
 		{
 			var type = typeof(T);
 			Queue<Ability> queue;
 
-			if (!cache.TryGetValue(type, out queue)) {
+			if (!cache.TryGetValue(type, out queue))
+			{
 				cache[type] = queue = new Queue<Ability>();
 			}
 
@@ -129,47 +142,52 @@ namespace MinTity
 		HashSet<Entity> entities = new HashSet<Entity>();
 		HashSet<int> abilityIds = new HashSet<int>();
 
-		public void AddId (int id)
+		public void AddId(int id)
 		{
 			abilityIds.Add(id);
 		}
 
-		public bool ManageEntity (Entity entity)
+		public bool ManageEntity(Entity entity)
 		{
 			var isContained = entities.Contains(entity);
 			var matchesAbilities = MatchesAbilities(entity);
 			var isAdded = !isContained && matchesAbilities;
 			var isRemoved = isContained && !matchesAbilities;
 
-			if (isAdded) {
+			if (isAdded)
+			{
 				entities.Add(entity);
 			}
-			else if (isRemoved) {
+			else if (isRemoved)
+			{
 				entities.Remove(entity);
 			}
 
 			return isAdded || isRemoved;
 		}
 
-		bool MatchesAbilities (Entity entity)
+		bool MatchesAbilities(Entity entity)
 		{
-			foreach (var abilityId in abilityIds) {
-				if (!entity.Has(abilityId)) {
+			foreach (var abilityId in abilityIds)
+			{
+				if (!entity.Has(abilityId))
+				{
 					return false;
 				}
+
 			}
 
 			return true;
 		}
 
-		public void Run ()
+		public void Run()
 		{
-			for (var i = entities.GetEnumerator(); i.MoveNext();) {
-				var entity = i.Current;
+			foreach (var entity in entities)
+			{
 				Handle(entity);
 			}
 		}
 
-		protected abstract void Handle (Entity entity);
+		protected abstract void Handle(Entity entity);
 	}
 }
